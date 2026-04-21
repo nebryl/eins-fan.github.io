@@ -123,7 +123,6 @@ body {
   z-index: 10000;
 }
 
-/* Wichtig: iframe blockiert keine Klicks */
 .preview iframe {
   pointer-events: none;
 }
@@ -258,7 +257,7 @@ function isLoggedIn() {
   return localStorage.getItem("loggedIn") === "true";
 }
 
-/* ================= APP START ================= */
+/* ================= APP ================= */
 
 function startApp() {
 
@@ -345,7 +344,7 @@ function loadAll() {
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
 }
 
-/* OPEN */
+/* OPEN PLAYER */
 function openPlayer(id) {
 
   currentVideo = id;
@@ -358,7 +357,11 @@ function openPlayer(id) {
     player = new YT.Player("player", {
       videoId: id,
       playerVars: { autoplay: 1 },
-      events: { onReady: startProgress }
+      events: {
+        onReady: () => {
+          startProgress();
+        }
+      }
     });
 
   } else {
@@ -367,17 +370,24 @@ function openPlayer(id) {
   }
 }
 
-/* PROGRESS */
+/* PROGRESS (FIXED STABLE LOOP) */
 function startProgress() {
 
-  if (progressInterval) clearInterval(progressInterval);
+  clearInterval(progressInterval);
 
   progressInterval = setInterval(() => {
 
     if (!player || !currentVideo) return;
 
-    const current = player.getCurrentTime();
-    const duration = player.getDuration();
+    let current = 0;
+    let duration = 0;
+
+    try {
+      current = player.getCurrentTime() || 0;
+      duration = player.getDuration() || 0;
+    } catch (e) {
+      return;
+    }
 
     if (!duration) return;
 
@@ -389,10 +399,10 @@ function startProgress() {
 
     if (bar) bar.style.width = percent + "%";
 
-  }, 300);
+  }, 250);
 }
 
-/* 🔥 CLOSE FIX (WICHTIG: destroy = kein Sound mehr) */
+/* CLOSE PLAYER (NO DESTROY = FIXED PROGRESS) */
 function closePlayer() {
 
   document.getElementById("overlay").style.display = "none";
@@ -401,9 +411,7 @@ function closePlayer() {
   if (player) {
     try {
       player.stopVideo();
-      player.destroy();
     } catch (e) {}
-    player = null;
   }
 
   currentVideo = null;
@@ -416,20 +424,11 @@ function closePlayer() {
   });
 }
 
-/* ================= EVENTS (DAS IST DER WICHTIGE FIX) ================= */
+/* EVENTS */
+document.getElementById("overlay").addEventListener("mousedown", closePlayer);
 
-/* Klick überall erkennen (auch iframe-safe) */
-document.addEventListener("mousedown", function (e) {
-  if (document.getElementById("playerView").style.display === "block") {
-    closePlayer();
-  }
-});
-
-/* ESC */
-window.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") {
-    closePlayer();
-  }
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closePlayer();
 });
 
 </script>
