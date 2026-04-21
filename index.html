@@ -5,15 +5,12 @@
 <title>Einsflix</title>
 
 <link rel="icon" type="image/jpeg" href="./pic.jpg">
-
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <style>
 
 :root {
   --bg: #232321;
-  --panel: #141413;
-  --panel2: #1f1e1c;
   --text: #9B978E;
   --border: #3a3936;
 }
@@ -36,7 +33,6 @@ body {
   margin-bottom: 20px;
   cursor: pointer;
 }
-
 .logo img {
   width: 60px;
 }
@@ -47,50 +43,45 @@ body {
 }
 
 .row h2 {
-  margin: 0 0 10px;
+  margin-bottom: 10px;
 }
 
-/* 📺 GRID ROW */
+/* 📺 SCROLL */
 .row-scroll {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding-bottom: 10px;
 }
-
 .row-scroll::-webkit-scrollbar {
   display: none;
 }
 
-/* 🎬 CARD */
+/* 🎬 VIDEO CARD */
 .video {
   min-width: 200px;
   background: #2a2926;
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
-  transition: 0.2s ease;
   position: relative;
+  transition: 0.2s;
 }
 
 .video:hover {
   transform: scale(1.06);
 }
 
-/* 📸 THUMB */
 .video img {
   width: 100%;
-  display: block;
 }
 
-/* 📝 TITLE */
 .video span {
-  display: block;
   padding: 6px;
+  display: block;
   font-size: 12px;
 }
 
-/* 🔴 MINI PROGRESS BAR */
+/* 🔴 MINI PROGRESS */
 .mini-progress {
   position: absolute;
   bottom: 0;
@@ -100,7 +91,19 @@ body {
   background: red;
 }
 
-/* 🔥 MODAL */
+/* 🌑 OVERLAY */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  z-index: 99998;
+}
+
+/* 🎬 PLAYER */
 .preview {
   position: fixed;
   display: none;
@@ -127,11 +130,9 @@ body {
   right: 15px;
   background: #9146FF;
   color: white;
-  border: 1px solid var(--border);
-  padding: 10px 12px;
+  padding: 10px;
   border-radius: 10px;
   cursor: pointer;
-  font-weight: bold;
   z-index: 100000;
 }
 
@@ -168,6 +169,10 @@ body {
 
 </div>
 
+<!-- 🌑 OVERLAY -->
+<div class="overlay" id="overlay"></div>
+
+<!-- 🎬 PLAYER -->
 <div class="preview">
   <div id="player"></div>
 </div>
@@ -186,7 +191,16 @@ const channels = {
 let player;
 let currentVideo = null;
 
-/* 📦 LOCAL STORAGE */
+/* 🔧 VIDEO ID FIX */
+function getVideoId(url) {
+  if (url.includes("shorts")) {
+    return url.split("/shorts/")[1].split("?")[0];
+  } else {
+    return url.split("v=")[1]?.split("&")[0];
+  }
+}
+
+/* 💾 STORAGE */
 function saveProgress(id, time) {
   localStorage.setItem("vid_" + id, time);
 }
@@ -195,13 +209,12 @@ function getProgress(id) {
   return localStorage.getItem("vid_" + id) || 0;
 }
 
-/* 📡 YOUTUBE API */
-function onYouTubeIframeAPIReady() {}
-
+/* 🎬 PLAYER OPEN */
 function openPlayer(id) {
   currentVideo = id;
 
   document.querySelector(".preview").style.display = "block";
+  document.getElementById("overlay").style.display = "block";
 
   if (player) {
     player.loadVideoById(id);
@@ -215,31 +228,39 @@ function openPlayer(id) {
   }
 }
 
-/* 📊 SAVE + UPDATE PROGRESS */
+/* 📊 PROGRESS */
 function updateProgress() {
   if (!player || !currentVideo) return;
 
   const current = player.getCurrentTime();
+  const duration = player.getDuration();
+
   saveProgress(currentVideo, current);
 
-  const duration = player.getDuration();
   const percent = (current / duration) * 100;
 
   const bar = document.querySelector(`[data-id="${currentVideo}"] .mini-progress`);
   if (bar) bar.style.width = percent + "%";
 }
 
-/* 🎬 CREATE CARD */
-function createVideo(item) {
-  const id = item.link.split("v=")[1]?.split("&")[0];
+/* ❌ CLOSE */
+document.getElementById("overlay").addEventListener("click", closePlayer);
 
+function closePlayer() {
+  document.querySelector(".preview").style.display = "none";
+  document.getElementById("overlay").style.display = "none";
+
+  if (player) player.stopVideo();
+}
+
+/* 🎬 CREATE */
+function createVideo(item) {
+  const id = getVideoId(item.link);
   const thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
 
   const div = document.createElement("div");
   div.className = "video";
   div.setAttribute("data-id", id);
-
-  const saved = getProgress(id);
 
   div.innerHTML = `
     <img src="${thumb}">
@@ -247,12 +268,8 @@ function createVideo(item) {
     <div class="mini-progress"></div>
   `;
 
-  /* restore progress */
-  setTimeout(() => {
-    const durationFake = 100;
-    const percent = (saved / durationFake) * 100;
-    div.querySelector(".mini-progress").style.width = percent + "%";
-  }, 100);
+  const saved = getProgress(id);
+  div.querySelector(".mini-progress").style.width = (saved / 300) * 100 + "%";
 
   div.addEventListener("click", () => openPlayer(id));
 
@@ -271,7 +288,6 @@ async function getFeed(id) {
 
 async function loadColumn(key, id) {
   const items = await getFeed(id);
-
   const box = document.getElementById(key + "-videos");
   box.innerHTML = "";
 
@@ -288,13 +304,6 @@ loadAll();
 function openTwitch() {
   window.open("https://www.twitch.tv/eintrachtspandau", "_blank");
 }
-
-/* 🔄 CLOSE MODAL */
-document.addEventListener("click", (e) => {
-  if (e.target.classList.contains("preview")) {
-    document.querySelector(".preview").style.display = "none";
-  }
-});
 
 </script>
 
