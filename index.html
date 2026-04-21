@@ -410,13 +410,15 @@ function isNewVideo(item) {
 function createVideo(item) {
 
   const id = getVideoId(item.link);
-  const isShortVideo = isShort(item.link);
-  const saved = getProgress(id);
-  const percent = saved ? (saved.time / saved.duration) * 100 : 0;
-  
   if (!id) return document.createElement("div");
 
+  const isShortVideo = isShort(item.link);
   const isNew = isNewVideo(item);
+  const saved = getProgress(id);
+  const percent = (saved && saved.duration)
+    ? (saved.time / saved.duration) * 100
+    : 0;
+
   const div = document.createElement("div");
   div.className = "video" + (isShortVideo ? " short" : "");
   div.setAttribute("data-id", id);
@@ -428,12 +430,7 @@ function createVideo(item) {
     ${isNew ? '<div class="badge-new">NEU</div>' : ''}
   `;
 
-  // 🔥 RESTORE PROGRESS ON LOAD
-  const saved = getProgress(id);
-
   if (saved && saved.duration > 0) {
-    const percent = (saved.time / saved.duration) * 100;
-
     setTimeout(() => {
       const bar = div.querySelector(".mini-progress");
       if (bar) bar.style.width = percent + "%";
@@ -469,6 +466,11 @@ function loadAll() {
   loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos");
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
   renderContinueWatching(); 
+}
+
+  /* onYouTubeIframeAPIReady */
+function onYouTubeIframeAPIReady() {
+  console.log("YouTube API ready");
 }
 
 /* OPEN */
