@@ -336,7 +336,11 @@ function startApp() {
 }
 
 window.onload = () => {
-  if (isLoggedIn()) startApp();
+  try {
+    if (isLoggedIn()) startApp();
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 /* ================= PROGRESS STORAGE ================= */
@@ -464,7 +468,6 @@ function loadAll() {
   loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos");
   loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos");
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
-  saveCurrent();
   renderContinueWatching(); 
 }
 
@@ -660,8 +663,8 @@ function renderContinueWatching() {
 
 /* save Current Progress*/
 function saveCurrent() {
-  if (!player || !currentVideo) return;
-
+  if (!player || !currentVideo || typeof player.getCurrentTime !== "function") return;
+  
   const current = player.getCurrentTime?.() || 0;
   const duration = player.getDuration?.() || 0;
 
