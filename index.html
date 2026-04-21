@@ -129,10 +129,9 @@ body {
 
 /* TOPBAR */
 .topbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: center;
-  position: relative;
   padding: 15px 20px;
   margin-top: 10px;
 }
@@ -150,6 +149,7 @@ body {
 
 #welcome {
   text-align: center;
+  margin: 0;
 }
 
 .logout {
@@ -407,6 +407,8 @@ function createVideo(item) {
 
   const id = getVideoId(item.link);
   const isShortVideo = isShort(item.link);
+  const saved = getProgress(id);
+  const percent = saved ? (saved.time / saved.duration) * 100 : 0;
   
   if (!id) return document.createElement("div");
 
