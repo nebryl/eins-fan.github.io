@@ -414,10 +414,8 @@ function createVideo(item) {
 
   const isShortVideo = isShort(item.link);
   const isNew = isNewVideo(item);
+
   const saved = getProgress(id);
-  const percent = (saved && saved.duration)
-    ? (saved.time / saved.duration) * 100
-    : 0;
 
   const div = document.createElement("div");
   div.className = "video" + (isShortVideo ? " short" : "");
@@ -425,12 +423,15 @@ function createVideo(item) {
 
   div.innerHTML = `
     <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg">
-    <span>${Math.round(percent)}% · ${item.title}</span>
+    <span>${item.title}</span>
     <div class="mini-progress"></div>
     ${isNew ? '<div class="badge-new">NEU</div>' : ''}
   `;
 
+  // Progress-Bar wiederherstellen
   if (saved && saved.duration > 0) {
+    const percent = (saved.time / saved.duration) * 100;
+
     setTimeout(() => {
       const bar = div.querySelector(".mini-progress");
       if (bar) bar.style.width = percent + "%";
