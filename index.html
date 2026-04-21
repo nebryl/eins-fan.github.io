@@ -64,7 +64,7 @@ body {
   padding: 6px;
 }
 
-/* 🎬 VIDEO CARD */
+/* 🎬 VIDEO */
 .video {
   display: flex;
   gap: 8px;
@@ -94,7 +94,7 @@ body {
   background: #333;
 }
 
-/* 🔥 MODAL PLAYER */
+/* 🔥 MODAL */
 .preview {
   position: fixed;
   display: none;
@@ -127,27 +127,27 @@ body {
     <img src="./assets/logo.png" alt="Logo">
   </div>
 
-  <!-- 📊 KANÄLE -->
+  <!-- 📊 KANÄLE (MEDIA GANZ RECHTS) -->
   <div class="col-header">Spandau</div>
-  <div class="col-header">Media</div>
   <div class="col-header">LoL</div>
   <div class="col-header">Fußball</div>
+  <div class="col-header">Media</div>
 
   <!-- 🎬 VIDEOS -->
   <div class="row-header">Videos</div>
 
   <div class="cell" id="spandau-videos"></div>
-  <div class="cell" id="media-videos"></div>
   <div class="cell" id="lol-videos"></div>
   <div class="cell" id="fussball-videos"></div>
+  <div class="cell" id="media-videos"></div>
 
   <!-- 🔥 SHORTS -->
   <div class="row-header">Shorts</div>
 
   <div class="cell" id="spandau-shorts"></div>
-  <div class="cell" id="media-shorts"></div>
   <div class="cell" id="lol-shorts"></div>
   <div class="cell" id="fussball-shorts"></div>
+  <div class="cell" id="media-shorts"></div>
 
 </div>
 
@@ -158,9 +158,9 @@ body {
 
 const channels = {
   spandau: "UC5QM2OXKyZaNw13iLbuEpCg",
-  media: "UCeuKtCc2Q0ySUxYX8yRZhcg",
-  lol: "UCeM9ckIXeJFvdt4bKpXvTqw",
-  fussball: "UCMQkXTIDVvVDh0ZuVB_0APg"
+  lol: "UCeuKtCc2Q0ySUxYX8yRZhcg",
+  fussball: "UCMQkXTIDVvVDh0ZuVB_0APg",
+  media: "UCeM9ckIXeJFvdt4bKpXvTqw"
 };
 
 async function getFeed(channelId) {
@@ -180,7 +180,7 @@ function getVideoId(url) {
   return url.split("v=")[1]?.split("&")[0] || url.split("/shorts/")[1];
 }
 
-/* 🎬 VIDEO CARD */
+/* 🎬 VIDEO */
 function createVideo(item) {
   const id = getVideoId(item.link);
   const thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
@@ -241,6 +241,25 @@ loadAll();
 
 /* 🔄 AUTO REFRESH */
 setInterval(loadAll, 5 * 60 * 1000);
+
+/* ❌ CLOSE MODAL: Klick außerhalb */
+document.addEventListener("click", (e) => {
+  const preview = document.getElementById("preview");
+
+  if (preview.style.display === "block" && !preview.contains(e.target) && !e.target.closest(".video")) {
+    preview.style.display = "none";
+    preview.innerHTML = "";
+  }
+});
+
+/* ⌨️ ESC CLOSE */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const preview = document.getElementById("preview");
+    preview.style.display = "none";
+    preview.innerHTML = "";
+  }
+});
 
 </script>
 
