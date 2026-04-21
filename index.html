@@ -21,42 +21,74 @@ body {
   color: var(--text);
 }
 
-/* LOGIN */
-#loginBox {
+/* ================= LOGIN ================= */
+
+#loginView {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  width: 250px;
+  width: 260px;
   margin: 150px auto;
   text-align: center;
 }
 
-#loginBox input {
+#loginView input {
   padding: 10px;
-  border-radius: 8px;
   border: none;
+  border-radius: 8px;
 }
 
-#loginBox button {
+#loginView button {
   padding: 10px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
 }
 
-/* APP */
-.container { padding: 20px; display: none; }
+/* ================= APP ================= */
 
-.logo { width: 80px; margin-bottom: 20px; cursor: pointer; }
-.logo img { width: 60px; }
+#appView {
+  display: none;
+}
 
-.row { margin-bottom: 30px; }
+.container {
+  padding: 20px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 20px;
+}
+
+.logout {
+  cursor: pointer;
+  background: #333;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* ROWS */
+
+.row {
+  margin-bottom: 30px;
+}
+
+.row h2 {
+  margin-bottom: 10px;
+}
+
 .row-scroll {
   display: flex;
   gap: 10px;
   overflow-x: auto;
 }
-.row-scroll::-webkit-scrollbar { display: none; }
+
+.row-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* VIDEO CARD */
 
 .video {
   min-width: 200px;
@@ -67,11 +99,13 @@ body {
   position: relative;
 }
 
-.video img { width: 100%; }
+.video img {
+  width: 100%;
+}
 
 .video span {
-  padding: 6px;
   display: block;
+  padding: 6px;
   font-size: 12px;
 }
 
@@ -84,11 +118,14 @@ body {
   background: red;
 }
 
+/* ================= PLAYER ================= */
+
 .overlay {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.7);
   display: none;
+  z-index: 999;
 }
 
 .preview {
@@ -101,22 +138,13 @@ body {
   height: 450px;
   background: black;
   border-radius: 12px;
+  overflow: hidden;
+  z-index: 1000;
 }
 
-#player { width: 100%; height: 100%; }
-
-/* USER BAR */
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.logout {
-  cursor: pointer;
-  background: #333;
-  padding: 6px 10px;
-  border-radius: 6px;
+#player {
+  width: 100%;
+  height: 100%;
 }
 
 </style>
@@ -124,194 +152,178 @@ body {
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox">
+<!-- 🔐 LOGIN -->
+<div id="loginView">
   <h2>Einsflix Login</h2>
 
   <input id="username" placeholder="Username">
   <input id="password" type="password" placeholder="Passwort">
 
-  <button onclick="handleLogin()">Einloggen</button>
+  <button onclick="handleLogin()">Login</button>
 </div>
 
-<!-- APP -->
-<div class="container" id="app">
+<!-- 📺 APP -->
+<div id="appView">
 
   <div class="topbar">
     <div id="welcome"></div>
     <div class="logout" onclick="logout()">Logout</div>
   </div>
 
-  <div class="logo" onclick="reloadDashboard()">
-    <img src="./pic.jpg">
-  </div>
+  <div class="container">
 
-  <div class="row">
-    <h2>Eintracht Spandau</h2>
-    <div class="row-scroll" id="spandau-videos"></div>
-  </div>
+    <div class="row">
+      <h2>Eintracht Spandau</h2>
+      <div class="row-scroll" id="spandau-videos"></div>
+    </div>
 
-  <div class="row">
-    <h2>LoL</h2>
-    <div class="row-scroll" id="lol-videos"></div>
+    <div class="row">
+      <h2>LoL</h2>
+      <div class="row-scroll" id="lol-videos"></div>
+    </div>
+
   </div>
 
 </div>
 
-<div class="overlay" id="overlay"></div>
+<!-- 🎬 PLAYER -->
+<div id="overlay"></div>
 
-<div class="preview">
+<div class="preview" id="playerView">
   <div id="player"></div>
 </div>
 
 <script>
 
-/* ======================
-   🔐 LOGIN SYSTEM
-====================== */
+/* ================= AUTH ================= */
 
 const FAKE_PASSWORD = "EinsAufDieEins";
-
-function login(username, password) {
-  if (!username || username.trim() === "") return false;
-
-  if (password === FAKE_PASSWORD) {
-    localStorage.setItem("currentUser", username.trim());
-    localStorage.setItem("loggedIn", "true");
-    return true;
-  }
-
-  return false;
-}
-
-function isLoggedIn() {
-  return localStorage.getItem("loggedIn") === "true";
-}
-
-function getCurrentUser() {
-  return localStorage.getItem("currentUser");
-}
-
-function logout() {
-  localStorage.removeItem("loggedIn");
-  localStorage.removeItem("currentUser");
-  location.reload();
-}
-
-/* ======================
-   LOGIN HANDLER
-====================== */
 
 function handleLogin() {
 
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value;
 
-  const ok = login(user, pass);
+  if (!user || user.trim() === "") return;
 
-  if (ok) {
+  if (pass === FAKE_PASSWORD) {
+
+    localStorage.setItem("user", user);
+    localStorage.setItem("loggedIn", "true");
+
     startApp();
   } else {
-    alert("Falsches Passwort!");
+    alert("Falsches Passwort");
   }
 }
 
-/* ======================
-   APP START
-====================== */
+function isLoggedIn() {
+  return localStorage.getItem("loggedIn") === "true";
+}
+
+function getUser() {
+  return localStorage.getItem("user");
+}
+
+function logout() {
+  localStorage.clear();
+  location.reload();
+}
+
+/* ================= APP START ================= */
 
 function startApp() {
 
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("app").style.display = "block";
+  document.getElementById("loginView").style.display = "none";
+  document.getElementById("appView").style.display = "block";
 
   document.getElementById("welcome").innerText =
-    "Willkommen " + getCurrentUser();
+    "Willkommen " + getUser();
 
   loadAll();
 }
 
-/* Auto login */
 window.onload = () => {
   if (isLoggedIn()) {
     startApp();
   }
 };
 
-/* ======================
-   VIDEO SYSTEM (gekürzt)
-====================== */
-
-const channels = {
-  spandau: "UC5QM2OXKyZaNw13iLbuEpCg",
-  lol: "UCeM9ckIXeJFvdt4bKpXvTqw"
-};
+/* ================= YOUTUBE ================= */
 
 let player;
-let currentVideo = null;
 
-/* Progress Storage */
-function saveProgress(id, time, duration) {
-
-  if (!duration) return;
-  if (time / duration < 0.10) return;
-
-  localStorage.setItem("vid_" + id, JSON.stringify({
-    time,
-    duration,
-    updatedAt: Date.now()
-  }));
-
-  cleanupStorage();
+/* VIDEO ID */
+function getVideoId(url) {
+  return url.split("v=")[1]?.split("&")[0];
 }
 
-function getProgress(id) {
-  const data = localStorage.getItem("vid_" + id);
-  return data ? JSON.parse(data) : null;
+/* CARD */
+function createVideo(item) {
+
+  const id = getVideoId(item.link);
+  const thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+
+  const div = document.createElement("div");
+  div.className = "video";
+
+  div.innerHTML = `
+    <img src="${thumb}">
+    <span>${item.title}</span>
+    <div class="mini-progress"></div>
+  `;
+
+  div.onclick = () => openPlayer(id);
+
+  return div;
 }
 
-/* Cleanup (75 + 30 Tage) */
-function cleanupStorage() {
+/* LOAD */
+async function loadColumn(id, container) {
 
-  const MAX_ITEMS = 75;
-  const MAX_DAYS = 30;
+  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
+  const res = await fetch(
+    "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url)
+  );
 
-  const now = Date.now();
+  const data = await res.json();
 
-  let items = Object.keys(localStorage)
-    .filter(k => k.startsWith("vid_"))
-    .map(k => {
-      const d = JSON.parse(localStorage.getItem(k));
-      return { key: k, updatedAt: d.updatedAt || 0 };
-    });
+  const box = document.getElementById(container);
+  box.innerHTML = "";
 
-  items.forEach(i => {
-    if ((now - i.updatedAt) / 86400000 > MAX_DAYS) {
-      localStorage.removeItem(i.key);
-    }
+  data.items.forEach(v => {
+    box.appendChild(createVideo(v));
   });
+}
 
-  items = Object.keys(localStorage)
-    .filter(k => k.startsWith("vid_"))
-    .map(k => JSON.parse(localStorage.getItem(k)))
-    .sort((a,b) => b.updatedAt - a.updatedAt);
+function loadAll() {
+  loadColumn("UC5QM2OXKyZaNw13iLbuEpCg", "spandau-videos");
+  loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos");
+}
 
-  if (items.length > MAX_ITEMS) {
-    items.slice(MAX_ITEMS).forEach(i => {
-      localStorage.removeItem("vid_" + i.id);
+/* ================= PLAYER ================= */
+
+function openPlayer(id) {
+
+  document.getElementById("overlay").style.display = "block";
+  document.getElementById("playerView").style.display = "block";
+
+  if (!player) {
+    player = new YT.Player("player", {
+      videoId: id,
+      playerVars: { autoplay: 1 }
     });
+  } else {
+    player.loadVideoById(id);
   }
 }
 
-/* Dashboard reload */
-function reloadDashboard() {
-  loadAll();
-}
+document.getElementById("overlay").onclick = () => {
+  document.getElementById("overlay").style.display = "none";
+  document.getElementById("playerView").style.display = "none";
 
-/* dummy load */
-function loadAll() {
-  console.log("Videos laden...");
-}
+  if (player) player.stopVideo();
+};
 
 </script>
 
