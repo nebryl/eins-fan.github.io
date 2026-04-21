@@ -53,7 +53,6 @@ body {
   padding: 20px;
 }
 
-/* TOPBAR */
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -61,9 +60,15 @@ body {
   padding: 10px 20px;
 }
 
-/* LOGO */
 .logo img {
   width: 60px;
+  cursor: pointer;
+}
+
+.logout {
+  background: #333;
+  padding: 6px 10px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
@@ -86,13 +91,14 @@ body {
   display: none;
 }
 
-/* VIDEO CARD */
+/* VIDEO */
 .video {
   min-width: 200px;
   background: #2a2926;
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
+  position: relative;
 }
 
 .video img {
@@ -103,6 +109,16 @@ body {
   display: block;
   padding: 6px;
   font-size: 12px;
+}
+
+/* PROGRESS */
+.mini-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background: red;
 }
 
 /* PLAYER */
@@ -131,14 +147,6 @@ body {
 #player {
   width: 100%;
   height: 100%;
-}
-
-/* LOGOUT */
-.logout {
-  cursor: pointer;
-  background: #333;
-  padding: 6px 10px;
-  border-radius: 6px;
 }
 
 </style>
@@ -257,8 +265,10 @@ window.onload = () => {
 /* ================= YOUTUBE ================= */
 
 let player;
+let currentVideo = null;
+let progressInterval = null;
 
-/* 🔥 FIX: Shorts + youtu.be + normal */
+/* VIDEO ID FIX (SHORTS + NORMAL) */
 function getVideoId(url) {
 
   if (!url) return null;
@@ -286,10 +296,12 @@ function createVideo(item) {
 
   const div = document.createElement("div");
   div.className = "video";
+  div.setAttribute("data-id", id);
 
   div.innerHTML = `
     <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg">
     <span>${item.title}</span>
+    <div class="mini-progress"></div>
   `;
 
   div.onclick = () => openPlayer(id);
@@ -297,7 +309,7 @@ function createVideo(item) {
   return div;
 }
 
-/* LOAD COLUMN */
+/* LOAD */
 async function loadColumn(channelId, containerId) {
 
   try {
@@ -316,17 +328,14 @@ async function loadColumn(channelId, containerId) {
 
     box.innerHTML = "";
 
-    if (!data.items) {
-      console.warn("Keine Daten:", channelId);
-      return;
-    }
+    if (!data.items) return;
 
     data.items.forEach(v => {
       box.appendChild(createVideo(v));
     });
 
   } catch (e) {
-    console.error("Fehler Channel:", channelId, e);
+    console.error("Load Fehler:", e);
   }
 }
 
@@ -343,25 +352,70 @@ function loadAll() {
 
 function openPlayer(id) {
 
+  currentVideo = id;
+
   document.getElementById("overlay").style.display = "block";
   document.getElementById("playerView").style.display = "block";
 
   if (!player) {
     player = new YT.Player("player", {
       videoId: id,
-      playerVars: { autoplay: 1 }
+      playerVars: { autoplay: 1 },
+      events: {
+        onReady: startProgress
+      }
     });
   } else {
     player.loadVideoById(id);
+    startProgress();
   }
 }
 
-document.getElementById("overlay").onclick = () => {
+/* PROGRESS BAR FIX */
+function startProgress() {
+
+  if (progressInterval) clearInterval(progressInterval);
+
+  progressInterval = setInterval(() => {
+
+    if (!player || !currentVideo) return;
+
+    const current = player.getCurrentTime();
+    const duration = player.getDuration();
+
+    if (!duration) return;
+
+    const percent = (current / duration) * 100;
+
+    const bar = document.querySelector(
+      `[data-id="${currentVideo}"] .mini-progress`
+    );
+
+    if (bar) bar.style.width = percent + "%";
+
+  }, 500);
+}
+
+/* CLOSE PLAYER FIX */
+document.getElementById("overlay").onclick = closePlayer;
+
+function closePlayer() {
+
   document.getElementById("overlay").style.display = "none";
   document.getElementById("playerView").style.display = "none";
 
-  if (player) player.stopVideo();
-};
+  if (player) {
+    player.stopVideo();
+    player.clearVideo();
+  }
+
+  currentVideo = null;
+
+  if (progressInterval) {
+    clearInterval(progressInterval);
+    progressInterval = null;
+  }
+}
 
 </script>
 
