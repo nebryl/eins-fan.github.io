@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Eintracht Spandau Dashboard</title>
+  <title>YouTube Dashboard</title>
 
   <style>
     body {
@@ -14,43 +14,81 @@
 
     .container {
       display: flex;
-      gap: 10px;
-      padding: 10px;
+      gap: 12px;
+      padding: 12px;
     }
 
     .column {
       flex: 1;
-      background: #1b1b1b;
-      border-radius: 10px;
-      padding: 10px;
-      overflow-y: auto;
-      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    h2 {
+    .channel-title {
+      text-align: center;
       font-size: 18px;
+      padding: 8px;
+      background: #1b1b1b;
+      border-radius: 10px;
+    }
+
+    .card {
+      background: #1b1b1b;
+      border-radius: 12px;
+      padding: 10px;
+      height: 45vh;
+      overflow-y: auto;
+    }
+
+    .card h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #aaa;
       border-bottom: 1px solid #333;
       padding-bottom: 5px;
     }
 
-    h3 {
-      font-size: 14px;
-      margin-top: 15px;
-      color: #aaa;
-    }
-
     .video {
+      display: flex;
+      gap: 10px;
       background: #222;
       padding: 8px;
       margin: 6px 0;
-      border-radius: 8px;
-      font-size: 13px;
+      border-radius: 10px;
+      align-items: center;
+      cursor: pointer;
     }
 
-    a {
-      color: #4da3ff;
-      text-decoration: none;
+    .video img {
+      width: 120px;
+      border-radius: 6px;
     }
+
+    .video a {
+      color: white;
+      text-decoration: none;
+      font-size: 13px;
+      flex: 1;
+    }
+
+    /* 🔥 Hover Preview */
+    .preview {
+      position: fixed;
+      display: none;
+      width: 360px;
+      height: 200px;
+      border-radius: 10px;
+      overflow: hidden;
+      z-index: 9999;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    }
+
+    .preview iframe {
+      width: 100%;
+      height: 100%;
+    }
+
   </style>
 </head>
 
@@ -58,38 +96,58 @@
 
 <div class="container">
 
-  <div class="column" id="spandau">
-    <h2>Eintracht Spandau</h2>
-    <h3>🔥 Shorts</h3>
-    <div id="spandau-shorts"></div>
+  <!-- SPANDAU -->
+  <div class="column">
+    <div class="channel-title">Eintracht Spandau</div>
 
-    <h3>🎬 Videos</h3>
-    <div id="spandau-videos"></div>
+    <div class="card">
+      <h3>🔥 Shorts</h3>
+      <div id="spandau-shorts"></div>
+    </div>
+
+    <div class="card">
+      <h3>🎬 Videos</h3>
+      <div id="spandau-videos"></div>
+    </div>
   </div>
 
-  <div class="column" id="lol">
-    <h2>LoL</h2>
-    <h3>🔥 Shorts</h3>
-    <div id="lol-shorts"></div>
+  <!-- LOL -->
+  <div class="column">
+    <div class="channel-title">LoL</div>
 
-    <h3>🎬 Videos</h3>
-    <div id="lol-videos"></div>
+    <div class="card">
+      <h3>🔥 Shorts</h3>
+      <div id="lol-shorts"></div>
+    </div>
+
+    <div class="card">
+      <h3>🎬 Videos</h3>
+      <div id="lol-videos"></div>
+    </div>
   </div>
 
-  <div class="column" id="fussball">
-    <h2>Fußball</h2>
-    <h3>🔥 Shorts</h3>
-    <div id="fussball-shorts"></div>
+  <!-- FUSSBALL -->
+  <div class="column">
+    <div class="channel-title">Fußball</div>
 
-    <h3>🎬 Videos</h3>
-    <div id="fussball-videos"></div>
+    <div class="card">
+      <h3>🔥 Shorts</h3>
+      <div id="fussball-shorts"></div>
+    </div>
+
+    <div class="card">
+      <h3>🎬 Videos</h3>
+      <div id="fussball-videos"></div>
+    </div>
   </div>
 
 </div>
 
+<!-- Hover Preview Container -->
+<div class="preview" id="preview"></div>
+
 <script>
 
-// 👉 HIER deine Channel IDs eintragen
 const channels = {
   spandau: "UCMQkXTIDVvVDh0ZuVB_0APg",
   lol: "UCeM9ckIXeJFvdt4bKpXvTqw",
@@ -98,26 +156,58 @@ const channels = {
 
 async function getFeed(channelId) {
   const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-  const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url));
+
+  const res = await fetch(
+    "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url)
+  );
+
   const data = await res.json();
-  return data.items;
+  return data.items || [];
 }
 
-// 👉 YouTube Video Dauer holen (oEmbed Trick + API fallback)
-async function getVideoLength(videoId) {
-  try {
-    const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
-    const data = await res.json();
-    // noembed liefert keine Dauer -> wir schätzen Shorts über URL später
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-// 👉 Short-Erkennung (realistisch ohne API nur heuristisch)
 function isShort(item) {
   return item.link.includes("/shorts/");
+}
+
+function getVideoId(url) {
+  return url.split("v=")[1]?.split("&")[0] || url.split("/shorts/")[1];
+}
+
+function createVideoElement(item) {
+  const videoId = getVideoId(item.link);
+  const thumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+  const div = document.createElement("div");
+  div.className = "video";
+
+  div.innerHTML = `
+    <img src="${thumb}">
+    <a href="${item.link}" target="_blank">${item.title}</a>
+  `;
+
+  // 🔥 Hover Preview
+  div.addEventListener("mouseenter", (e) => {
+    const preview = document.getElementById("preview");
+    preview.style.display = "block";
+    preview.innerHTML = `
+      <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1"
+        frameborder="0"
+        allow="autoplay; encrypted-media">
+      </iframe>
+    `;
+  });
+
+  div.addEventListener("mousemove", (e) => {
+    const preview = document.getElementById("preview");
+    preview.style.left = (e.pageX + 20) + "px";
+    preview.style.top = (e.pageY + 20) + "px";
+  });
+
+  div.addEventListener("mouseleave", () => {
+    document.getElementById("preview").style.display = "none";
+  });
+
+  return div;
 }
 
 async function loadColumn(prefix, channelId) {
@@ -126,26 +216,31 @@ async function loadColumn(prefix, channelId) {
   const shortsBox = document.getElementById(prefix + "-shorts");
   const videosBox = document.getElementById(prefix + "-videos");
 
-  for (const item of items) {
-    const div = document.createElement("div");
-    div.className = "video";
+  shortsBox.innerHTML = "";
+  videosBox.innerHTML = "";
 
-    div.innerHTML = `
-      <a href="${item.link}" target="_blank">▶ ${item.title}</a>
-    `;
+  items.forEach(item => {
+    const el = createVideoElement(item);
 
     if (isShort(item)) {
-      shortsBox.appendChild(div);
+      shortsBox.appendChild(el);
     } else {
-      videosBox.appendChild(div);
+      videosBox.appendChild(el);
     }
-  }
+  });
 }
 
-// 👉 Laden
-loadColumn("spandau", channels.spandau);
-loadColumn("lol", channels.lol);
-loadColumn("fussball", channels.fussball);
+function loadAll() {
+  loadColumn("spandau", channels.spandau);
+  loadColumn("lol", channels.lol);
+  loadColumn("fussball", channels.fussball);
+}
+
+// 🚀 initial load
+loadAll();
+
+// 🔄 Auto Refresh alle 5 Minuten
+setInterval(loadAll, 5 * 60 * 1000);
 
 </script>
 
