@@ -58,16 +58,19 @@ body {
 
 /* 🎮 TWITCH BUTTON */
 .twitch-btn {
-  grid-column: 1;
+  position: fixed;
+  bottom: 15px;
+  left: 15px;
+
   background: #9146FF;
   color: white;
   border: 1px solid var(--border);
-  margin: 10px;
-  padding: 10px 8px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: bold;
   transition: 0.15s ease;
+  z-index: 100000;
 }
 
 .twitch-btn:hover {
