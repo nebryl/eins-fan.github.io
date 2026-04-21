@@ -196,15 +196,14 @@ body {
 
   <form id="loginForm">
     <input name="username" id="username" placeholder="Username" autocomplete="username">
-    <input name="password" id="password" type="password" placeholder="Passwort" autocomplete="current-password">
+
+    <div class="pw-wrapper">
+      <input name="password" id="password" type="password" placeholder="Passwort" autocomplete="current-password">
+      <span class="eye" onclick="togglePassword()">👁️</span>
+    </div>
+
     <button type="submit">Login</button>
   </form>
-</div>
-
- <!-- Auge -->
-<div class="pw-wrapper">
-  <input id="password" type="password" placeholder="Passwort" autocomplete="current-password">
-  <span class="eye" onclick="togglePassword()">👁️</span>
 </div>
 
 <!-- APP -->
@@ -287,11 +286,9 @@ function login() {
 function togglePassword() {
   const input = document.getElementById("password");
 
-  if (input.type === "password") {
-    input.type = "text";
-  } else {
-    input.type = "password";
-  }
+  input.type = (input.type === "password")
+    ? "text"
+    : "password";
 }
 
 function logout() {
