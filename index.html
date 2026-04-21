@@ -417,7 +417,7 @@ function createVideo(item) {
 
   div.innerHTML = `
     <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg">
-    <span>${item.title}</span>
+    <span>${Math.round(percent)}% · ${item.title}</span>
     <div class="mini-progress"></div>
     ${isNew ? '<div class="badge-new">NEU</div>' : ''}
   `;
