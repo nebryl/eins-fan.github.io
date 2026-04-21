@@ -461,6 +461,7 @@ function openPlayer(id) {
       
           playerReady = true;
           startProgress();
+          saveCurrent();
         };
       
         // kleine Startverzögerung für YouTube intern
@@ -503,6 +504,12 @@ function openPlayer(id) {
 
 function onPlayerStateChange(e) {
 
+  if (e.data === YT.PlayerState.PLAYING) {
+    playerReady = true;
+    startProgress();
+    saveCurrent();
+  }
+  
   if (e.data === YT.PlayerState.PAUSED) {
     saveCurrent();
   }
@@ -520,7 +527,7 @@ function startProgress() {
   
   progressInterval = setInterval(() => {
   
-    if (!player || !currentVideo || !playerReady) return;
+    if (!player || !currentVideo) return;
   
     const current = player.getCurrentTime();
     const duration = player.getDuration();
