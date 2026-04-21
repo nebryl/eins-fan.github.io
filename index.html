@@ -422,6 +422,7 @@ function loadAll() {
   loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos");
   loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos");
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
+  saveCurrent();
   renderContinueWatching(); 
 }
 
@@ -543,6 +544,18 @@ function renderContinueWatching() {
   });
 }
 
+/* save Current Progress*/
+function saveCurrent() {
+  if (!player || !currentVideo) return;
+
+  const current = player.getCurrentTime();
+  const duration = player.getDuration();
+
+  if (!duration) return;
+
+  saveProgress(currentVideo, current, duration);
+}
+
 /* CLOSE */
 function closePlayer() {
 
@@ -556,11 +569,24 @@ function closePlayer() {
   currentVideo = null;
   clearInterval(progressInterval);
   progressInterval = null;
+
+  saveCurrent();
   renderContinueWatching();
 }
 
 /* EVENTS */
 document.getElementById("overlay").addEventListener("pointerdown", closePlayer);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    saveCurrent();
+  }
+});
+
+player.addEventListener("onStateChange", (e) => {
+  if (e.data === YT.PlayerState.PAUSED) {
+    saveCurrent();
+  }
+});
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePlayer();
