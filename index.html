@@ -71,7 +71,7 @@ body {
   display: none;
 }
 
-/* VIDEO CARD */
+/* VIDEO */
 .video {
   min-width: 200px;
   background: #2a2926;
@@ -104,7 +104,7 @@ body {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.75);
   display: none;
   z-index: 9999;
 }
@@ -123,6 +123,7 @@ body {
   z-index: 10000;
 }
 
+/* 🔥 wichtig für Click Fix */
 .preview iframe {
   pointer-events: none;
 }
@@ -130,6 +131,7 @@ body {
 #player {
   width: 100%;
   height: 100%;
+  pointer-events: auto;
 }
 
 /* TOPBAR */
@@ -184,7 +186,6 @@ body {
 <div id="appView">
 
   <div class="topbar">
-
     <div class="logo" onclick="location.reload()">
       <img src="./pic.jpg">
     </div>
@@ -256,7 +257,7 @@ function isLoggedIn() {
   return localStorage.getItem("loggedIn") === "true";
 }
 
-/* APP START */
+/* START */
 function startApp() {
 
   document.getElementById("loginView").style.display = "none";
@@ -332,9 +333,7 @@ async function loadColumn(channelId, containerId) {
   const box = document.getElementById(containerId);
   box.innerHTML = "";
 
-  data.items?.forEach(v => {
-    box.appendChild(createVideo(v));
-  });
+  data.items?.forEach(v => box.appendChild(createVideo(v)));
 }
 
 function loadAll() {
@@ -344,7 +343,7 @@ function loadAll() {
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
 }
 
-/* PLAYER OPEN */
+/* OPEN PLAYER */
 function openPlayer(id) {
 
   currentVideo = id;
@@ -353,11 +352,13 @@ function openPlayer(id) {
   document.getElementById("playerView").style.display = "block";
 
   if (!player) {
+
     player = new YT.Player("player", {
       videoId: id,
       playerVars: { autoplay: 1 },
       events: { onReady: startProgress }
     });
+
   } else {
     player.loadVideoById(id);
     startProgress();
@@ -389,7 +390,7 @@ function startProgress() {
   }, 300);
 }
 
-/* CLOSE PLAYER */
+/* 🔥 CLOSE FIX (HARD RESET) */
 function closePlayer() {
 
   document.getElementById("overlay").style.display = "none";
@@ -399,7 +400,11 @@ function closePlayer() {
     try {
       player.pauseVideo();
       player.stopVideo();
-      player.seekTo(0, true);
+
+      // 🔥 wichtig: zerstört Audio-Stream wirklich
+      player.destroy();
+      player = null;
+
     } catch (e) {}
   }
 
@@ -413,8 +418,8 @@ function closePlayer() {
   });
 }
 
-/* EVENTS FIX */
-document.getElementById("overlay").onclick = closePlayer;
+/* EVENTS */
+document.getElementById("overlay").addEventListener("mousedown", closePlayer);
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePlayer();
