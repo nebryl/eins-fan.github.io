@@ -123,7 +123,7 @@ body {
   z-index: 10000;
 }
 
-/* 🔥 wichtig für Click Fix */
+/* Wichtig: iframe blockiert keine Klicks */
 .preview iframe {
   pointer-events: none;
 }
@@ -229,7 +229,8 @@ body {
 
 <script>
 
-/* LOGIN */
+/* ================= LOGIN ================= */
+
 const PASSWORD = "EinsAufDieEins";
 
 function login() {
@@ -257,7 +258,8 @@ function isLoggedIn() {
   return localStorage.getItem("loggedIn") === "true";
 }
 
-/* START */
+/* ================= APP START ================= */
+
 function startApp() {
 
   document.getElementById("loginView").style.display = "none";
@@ -273,7 +275,8 @@ window.onload = () => {
   if (isLoggedIn()) startApp();
 };
 
-/* PLAYER */
+/* ================= PLAYER ================= */
+
 let player;
 let currentVideo = null;
 let progressInterval = null;
@@ -305,7 +308,6 @@ function createVideo(item) {
 
   const div = document.createElement("div");
   div.className = "video";
-  div.setAttribute("data-id", id);
 
   div.innerHTML = `
     <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg">
@@ -343,7 +345,7 @@ function loadAll() {
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
 }
 
-/* OPEN PLAYER */
+/* OPEN */
 function openPlayer(id) {
 
   currentVideo = id;
@@ -390,7 +392,7 @@ function startProgress() {
   }, 300);
 }
 
-/* 🔥 CLOSE FIX (HARD RESET) */
+/* 🔥 CLOSE FIX (WICHTIG: destroy = kein Sound mehr) */
 function closePlayer() {
 
   document.getElementById("overlay").style.display = "none";
@@ -398,14 +400,10 @@ function closePlayer() {
 
   if (player) {
     try {
-      player.pauseVideo();
       player.stopVideo();
-
-      // 🔥 wichtig: zerstört Audio-Stream wirklich
       player.destroy();
-      player = null;
-
     } catch (e) {}
+    player = null;
   }
 
   currentVideo = null;
@@ -418,11 +416,20 @@ function closePlayer() {
   });
 }
 
-/* EVENTS */
-document.getElementById("overlay").addEventListener("mousedown", closePlayer);
+/* ================= EVENTS (DAS IST DER WICHTIGE FIX) ================= */
 
-window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closePlayer();
+/* Klick überall erkennen (auch iframe-safe) */
+document.addEventListener("mousedown", function (e) {
+  if (document.getElementById("playerView").style.display === "block") {
+    closePlayer();
+  }
+});
+
+/* ESC */
+window.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    closePlayer();
+  }
 });
 
 </script>
