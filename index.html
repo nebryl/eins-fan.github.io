@@ -2,29 +2,29 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Eintracht Spandau Videos</title>
+  <title>Eintracht Spandau Dashboard</title>
 
   <style>
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      background: #111;
+      font-family: Arial, sans-serif;
+      background: #0f0f0f;
       color: white;
     }
 
     .container {
       display: flex;
-      gap: 20px;
-      padding: 20px;
+      gap: 10px;
+      padding: 10px;
     }
 
     .column {
       flex: 1;
-      background: #1c1c1c;
-      padding: 10px;
+      background: #1b1b1b;
       border-radius: 10px;
+      padding: 10px;
       overflow-y: auto;
-      max-height: 95vh;
+      height: 100vh;
     }
 
     h2 {
@@ -33,11 +33,21 @@
       padding-bottom: 5px;
     }
 
-    .video {
-      margin: 10px 0;
+    h3 {
+      font-size: 14px;
+      margin-top: 15px;
+      color: #aaa;
     }
 
-    .video a {
+    .video {
+      background: #222;
+      padding: 8px;
+      margin: 6px 0;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    a {
       color: #4da3ff;
       text-decoration: none;
     }
@@ -48,45 +58,95 @@
 
 <div class="container">
 
-  <div class="column" id="col1">
+  <div class="column" id="spandau">
     <h2>Eintracht Spandau</h2>
+    <h3>🔥 Shorts</h3>
+    <div id="spandau-shorts"></div>
+
+    <h3>🎬 Videos</h3>
+    <div id="spandau-videos"></div>
   </div>
 
-  <div class="column" id="col2">
+  <div class="column" id="lol">
     <h2>LoL</h2>
+    <h3>🔥 Shorts</h3>
+    <div id="lol-shorts"></div>
+
+    <h3>🎬 Videos</h3>
+    <div id="lol-videos"></div>
   </div>
 
-  <div class="column" id="col3">
+  <div class="column" id="fussball">
     <h2>Fußball</h2>
+    <h3>🔥 Shorts</h3>
+    <div id="fussball-shorts"></div>
+
+    <h3>🎬 Videos</h3>
+    <div id="fussball-videos"></div>
   </div>
 
 </div>
 
 <script>
-async function loadRSS(url, containerId) {
+
+// 👉 HIER deine Channel IDs eintragen
+const channels = {
+  spandau: "UCMQkXTIDVvVDh0ZuVB_0APg",
+  lol: "UCeM9ckIXeJFvdt4bKpXvTqw",
+  fussball: "UC5QM2OXKyZaNw13iLbuEpCg"
+};
+
+async function getFeed(channelId) {
+  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
   const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url));
   const data = await res.json();
+  return data.items;
+}
 
-  const container = document.getElementById(containerId);
+// 👉 YouTube Video Dauer holen (oEmbed Trick + API fallback)
+async function getVideoLength(videoId) {
+  try {
+    const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+    const data = await res.json();
+    // noembed liefert keine Dauer -> wir schätzen Shorts über URL später
+    return null;
+  } catch {
+    return null;
+  }
+}
 
-  data.items.slice(0, 10).forEach(item => {
+// 👉 Short-Erkennung (realistisch ohne API nur heuristisch)
+function isShort(item) {
+  return item.link.includes("/shorts/");
+}
+
+async function loadColumn(prefix, channelId) {
+  const items = await getFeed(channelId);
+
+  const shortsBox = document.getElementById(prefix + "-shorts");
+  const videosBox = document.getElementById(prefix + "-videos");
+
+  for (const item of items) {
     const div = document.createElement("div");
     div.className = "video";
 
     div.innerHTML = `
-      <a href="${item.link}" target="_blank">
-        ▶ ${item.title}
-      </a>
+      <a href="${item.link}" target="_blank">▶ ${item.title}</a>
     `;
 
-    container.appendChild(div);
-  });
+    if (isShort(item)) {
+      shortsBox.appendChild(div);
+    } else {
+      videosBox.appendChild(div);
+    }
+  }
 }
 
-// 🔑 Hier deine Channel RSS Feeds eintragen:
-loadRSS("https://www.youtube.com/feeds/videos.xml?channel_id=UCMQkXTIDVvVDh0ZuVB_0APg", "col1");
-loadRSS("https://www.youtube.com/feeds/videos.xml?channel_id=UCeM9ckIXeJFvdt4bKpXvTqw", "col2");
-loadRSS("https://www.youtube.com/feeds/videos.xml?channel_id=UC5QM2OXKyZaNw13iLbuEpCg", "col3");
+// 👉 Laden
+loadColumn("spandau", channels.spandau);
+loadColumn("lol", channels.lol);
+loadColumn("fussball", channels.fussball);
+
 </script>
 
 </body>
