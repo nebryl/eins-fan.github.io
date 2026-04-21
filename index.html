@@ -93,34 +93,38 @@ body {
   left: 0;
   height: 4px;
   width: 0%;
-  background: red;
+  background: linear-gradient(90deg, #ff0000, #ff4444);
 }
 
-/* OVERLAY */
+/* ================= OVERLAY (ZWISCHEN SEITE UND PLAYER) ================= */
 .overlay {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.75);
   display: none;
-  z-index: 999999;
+
+  /* 👇 wichtig: unter Player */
+  z-index: 9998;
 }
 
-/* PLAYER */
+/* ================= PLAYER ================= */
 .preview {
   position: fixed;
   display: none;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+
   width: 800px;
   height: 450px;
   background: black;
   border-radius: 12px;
   overflow: hidden;
-  z-index: 999998;
+
+  /* 👇 über Overlay */
+  z-index: 9999;
 }
 
-/* IMPORTANT: iframe darf Events nicht blocken */
 #player {
   width: 100%;
   height: 100%;
@@ -345,18 +349,13 @@ function openPlayer(id) {
   document.getElementById("overlay").style.display = "block";
   document.getElementById("playerView").style.display = "block";
 
-  const startTime = 0;
-
   if (!player) {
 
     player = new YT.Player("player", {
       videoId: id,
       playerVars: { autoplay: 1 },
       events: {
-        onReady: () => {
-          player.seekTo(startTime, true);
-          startProgress();
-        }
+        onReady: () => startProgress()
       }
     });
 
@@ -405,18 +404,13 @@ function closePlayer() {
   progressInterval = null;
 }
 
-/* ================= 🔥 FIX CLICK OUTSIDE (WORKING) ================= */
+/* ================= EVENTS ================= */
 
-document.getElementById("overlay").addEventListener("pointerdown", function () {
-  closePlayer();
-});
-
-document.getElementById("playerView").addEventListener("pointerdown", function (e) {
-  e.stopPropagation();
-});
+/* CLICK OUTSIDE (JETZT RICHTIG POSITIONIERT) */
+document.getElementById("overlay").addEventListener("pointerdown", closePlayer);
 
 /* ESC */
-window.addEventListener("keydown", function (e) {
+window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePlayer();
 });
 
