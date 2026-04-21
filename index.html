@@ -445,7 +445,9 @@ function openPlayer(id) {
     playerVars: { autoplay: 1 },
     events: {
       onReady: (e) => {
-        player.seekTo(startTime, true);
+        setTimeout(() => {
+          player.seekTo(startTime, true);
+        }, 300);
         playerReady = true;
       
         setTimeout(() => {
@@ -463,12 +465,14 @@ function openPlayer(id) {
 }
 
 function onPlayerStateChange(e) {
+
   if (e.data === YT.PlayerState.PAUSED) {
     saveCurrent();
   }
 
-  if (e.data === YT.PlayerState.PLAYING) {
-    playerReady = true;
+  if (e.data === YT.PlayerState.ENDED) {
+    saveCurrent();
+    renderContinueWatching();
   }
 }
 
@@ -562,12 +566,11 @@ function renderContinueWatching() {
 
 /* save Current Progress*/
 function saveCurrent() {
-  if (!player || !currentVideo || !playerReady) return;
+  if (!player || !currentVideo) return;
 
-  const current = player.getCurrentTime();
-  const duration = player.getDuration();
+  const current = player.getCurrentTime?.() || 0;
+  const duration = player.getDuration?.() || 0;
 
-  // 🔥 verhindert "0 Sekunden Bug"
   if (!duration || current < 1) return;
 
   saveProgress(currentVideo, current, duration);
@@ -595,12 +598,6 @@ function closePlayer() {
 document.getElementById("overlay").addEventListener("pointerdown", closePlayer);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
-    saveCurrent();
-  }
-});
-
-player.addEventListener("onStateChange", (e) => {
-  if (e.data === YT.PlayerState.PAUSED) {
     saveCurrent();
   }
 });
