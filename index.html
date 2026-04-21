@@ -227,11 +227,18 @@ function openPlayer(id) {
   document.querySelector(".preview").style.display = "block";
   document.getElementById("overlay").style.display = "block";
 
+  const saved = getProgress(id);
+  const startTime = saved?.time || 0;
+
   if (player) {
-    player.loadVideoById(id);
+    player.loadVideoById({ videoId: id, startSeconds: startTime });
   } else {
     player = new YT.Player("player", {
       videoId: id,
+      playerVars: {
+        autoplay: 1,
+        start: startTime
+      },
       events: {
         onReady: () => {
           if (!progressInterval) {
