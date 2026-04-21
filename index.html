@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <title>Einsflix</title>
 
-<!-- 🖼️ FAVICON -->
 <link rel="icon" type="image/jpeg" href="./pic.jpg">
+
+<script src="https://www.youtube.com/iframe_api"></script>
 
 <style>
 
@@ -14,8 +15,6 @@
   --panel: #141413;
   --panel2: #1f1e1c;
   --text: #9B978E;
-  --accent: #B64F46;
-  --accent2: #356675;
   --border: #3a3936;
 }
 
@@ -31,31 +30,27 @@ body {
   padding: 20px;
 }
 
-/* 🖼️ LOGO (FIXED CLICK) */
+/* 🖼️ LOGO */
 .logo {
   width: 80px;
   margin-bottom: 20px;
   cursor: pointer;
-  position: relative;
-  z-index: 20;
 }
 
 .logo img {
   width: 60px;
-  height: 60px;
 }
 
-/* 🎬 ROWS */
+/* 🎬 ROW */
 .row {
   margin-bottom: 30px;
 }
 
 .row h2 {
-  margin: 0 0 10px 0;
-  color: var(--text);
+  margin: 0 0 10px;
 }
 
-/* 📺 HORIZONTAL SCROLL */
+/* 📺 GRID ROW */
 .row-scroll {
   display: flex;
   gap: 10px;
@@ -67,7 +62,7 @@ body {
   display: none;
 }
 
-/* 🎬 VIDEO CARD */
+/* 🎬 CARD */
 .video {
   min-width: 200px;
   background: #2a2926;
@@ -75,23 +70,34 @@ body {
   overflow: hidden;
   cursor: pointer;
   transition: 0.2s ease;
+  position: relative;
 }
 
 .video:hover {
-  transform: scale(1.08);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  transform: scale(1.06);
 }
 
+/* 📸 THUMB */
 .video img {
   width: 100%;
   display: block;
 }
 
+/* 📝 TITLE */
 .video span {
   display: block;
   padding: 6px;
   font-size: 12px;
-  color: var(--text);
+}
+
+/* 🔴 MINI PROGRESS BAR */
+.mini-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: red;
 }
 
 /* 🔥 MODAL */
@@ -107,20 +113,18 @@ body {
   border-radius: 12px;
   overflow: hidden;
   z-index: 99999;
-  box-shadow: 0 0 40px rgba(0,0,0,0.8);
 }
 
-.preview iframe {
+#player {
   width: 100%;
   height: 100%;
 }
 
-/* 🎮 TWITCH BUTTON */
+/* 🎮 TWITCH */
 .twitch-btn {
   position: fixed;
   bottom: 15px;
   right: 15px;
-
   background: #9146FF;
   color: white;
   border: 1px solid var(--border);
@@ -128,13 +132,7 @@ body {
   border-radius: 10px;
   cursor: pointer;
   font-weight: bold;
-  transition: 0.15s ease;
   z-index: 100000;
-}
-
-.twitch-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 12px rgba(145, 70, 255, 0.5);
 }
 
 </style>
@@ -144,30 +142,25 @@ body {
 
 <div class="container">
 
-  <!-- 🖼️ LOGO -->
   <div class="logo" onclick="reloadDashboard()">
-    <img src="./pic.jpg" alt="Logo">
+    <img src="./pic.jpg">
   </div>
 
-  <!-- 🎬 SPANDAU -->
   <div class="row">
     <h2>Spandau</h2>
     <div class="row-scroll" id="spandau-videos"></div>
   </div>
 
-  <!-- 🎮 LOL -->
   <div class="row">
     <h2>LoL</h2>
     <div class="row-scroll" id="lol-videos"></div>
   </div>
 
-  <!-- ⚽ FUSSBALL -->
   <div class="row">
     <h2>Fußball</h2>
     <div class="row-scroll" id="fussball-videos"></div>
   </div>
 
-  <!-- 🎥 MEDIA -->
   <div class="row">
     <h2>Media</h2>
     <div class="row-scroll" id="media-videos"></div>
@@ -175,13 +168,11 @@ body {
 
 </div>
 
-<!-- 🔥 MODAL -->
-<div class="preview" id="preview"></div>
+<div class="preview">
+  <div id="player"></div>
+</div>
 
-<!-- 🎮 TWITCH BUTTON -->
-<button class="twitch-btn" onclick="openTwitch()">
-  🎮 Spandau Twitch
-</button>
+<button class="twitch-btn" onclick="openTwitch()">🎮 Twitch</button>
 
 <script>
 
@@ -192,104 +183,118 @@ const channels = {
   media: "UCeuKtCc2Q0ySUxYX8yRZhcg"
 };
 
-async function getFeed(channelId) {
-  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+let player;
+let currentVideo = null;
+
+/* 📦 LOCAL STORAGE */
+function saveProgress(id, time) {
+  localStorage.setItem("vid_" + id, time);
+}
+
+function getProgress(id) {
+  return localStorage.getItem("vid_" + id) || 0;
+}
+
+/* 📡 YOUTUBE API */
+function onYouTubeIframeAPIReady() {}
+
+function openPlayer(id) {
+  currentVideo = id;
+
+  document.querySelector(".preview").style.display = "block";
+
+  if (player) {
+    player.loadVideoById(id);
+  } else {
+    player = new YT.Player("player", {
+      videoId: id,
+      events: {
+        onReady: () => setInterval(updateProgress, 500)
+      }
+    });
+  }
+}
+
+/* 📊 SAVE + UPDATE PROGRESS */
+function updateProgress() {
+  if (!player || !currentVideo) return;
+
+  const current = player.getCurrentTime();
+  saveProgress(currentVideo, current);
+
+  const duration = player.getDuration();
+  const percent = (current / duration) * 100;
+
+  const bar = document.querySelector(`[data-id="${currentVideo}"] .mini-progress`);
+  if (bar) bar.style.width = percent + "%";
+}
+
+/* 🎬 CREATE CARD */
+function createVideo(item) {
+  const id = item.link.split("v=")[1]?.split("&")[0];
+
+  const thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+
+  const div = document.createElement("div");
+  div.className = "video";
+  div.setAttribute("data-id", id);
+
+  const saved = getProgress(id);
+
+  div.innerHTML = `
+    <img src="${thumb}">
+    <span>${item.title}</span>
+    <div class="mini-progress"></div>
+  `;
+
+  /* restore progress */
+  setTimeout(() => {
+    const durationFake = 100;
+    const percent = (saved / durationFake) * 100;
+    div.querySelector(".mini-progress").style.width = percent + "%";
+  }, 100);
+
+  div.addEventListener("click", () => openPlayer(id));
+
+  return div;
+}
+
+/* 📥 LOAD */
+async function getFeed(id) {
+  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
   const res = await fetch(
     "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url)
   );
   const data = await res.json();
-  return data.items || [];
+  return data.items;
 }
 
-function getVideoId(url) {
-  return url.split("v=")[1]?.split("&")[0] || url.split("/shorts/")[1];
+async function loadColumn(key, id) {
+  const items = await getFeed(id);
+
+  const box = document.getElementById(key + "-videos");
+  box.innerHTML = "";
+
+  items.forEach(v => box.appendChild(createVideo(v)));
 }
 
-/* 🔄 Reload */
-function reloadDashboard() {
-  loadAll();
+function loadAll() {
+  Object.entries(channels).forEach(([k, v]) => loadColumn(k, v));
 }
+
+loadAll();
 
 /* 🎮 TWITCH */
 function openTwitch() {
   window.open("https://www.twitch.tv/eintrachtspandau", "_blank");
 }
 
-/* 🎬 VIDEO */
-function createVideo(item) {
-  const id = getVideoId(item.link);
-  const thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-
-  const div = document.createElement("div");
-  div.className = "video";
-
-  div.innerHTML = `
-    <img src="${thumb}">
-    <span>${item.title}</span>
-  `;
-
-  div.addEventListener("click", () => {
-    const preview = document.getElementById("preview");
-
-    preview.style.display = "block";
-    preview.innerHTML = `
-      <iframe
-        src="https://www.youtube.com/embed/${id}?autoplay=1&controls=1"
-        frameborder="0"
-        allow="autoplay; encrypted-media; fullscreen">
-      </iframe>
-    `;
-  });
-
-  return div;
-}
-
-/* 📥 LOAD */
-async function loadColumn(prefix, channelId) {
-  const items = await getFeed(channelId);
-
-  const box = document.getElementById(prefix + "-videos");
-  box.innerHTML = "";
-
-  items.forEach(item => {
-    box.appendChild(createVideo(item));
-  });
-}
-
-/* 🚀 LOAD ALL */
-function loadAll() {
-  Object.entries(channels).forEach(([key, id]) => {
-    loadColumn(key, id);
-  });
-}
-
-loadAll();
-
-/* ❌ CLOSE MODAL */
+/* 🔄 CLOSE MODAL */
 document.addEventListener("click", (e) => {
-  const preview = document.getElementById("preview");
-
-  if (
-    preview.style.display === "block" &&
-    !preview.contains(e.target) &&
-    !e.target.closest(".video")
-  ) {
-    preview.style.display = "none";
-    preview.innerHTML = "";
+  if (e.target.classList.contains("preview")) {
+    document.querySelector(".preview").style.display = "none";
   }
 });
-
-/* ⌨️ ESC */
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    const preview = document.getElementById("preview");
-    preview.style.display = "none";
-    preview.innerHTML = "";
-  }
-});
-
-/* 🔄 AUTO REFRESH */
-setInterval(loadAll, 5 * 60 * 1000);
 
 </script>
 
