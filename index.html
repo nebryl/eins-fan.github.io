@@ -129,9 +129,10 @@ body {
 
 /* TOPBAR */
 .topbar {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  position: relative;
+  display: flex;
   align-items: center;
+  justify-content: center;
   padding: 15px 20px;
   margin-top: 10px;
 }
@@ -148,8 +149,8 @@ body {
 }
 
 #welcome {
-  text-align: center;
   margin: 0;
+  text-align: center;
 }
 
 .logout {
