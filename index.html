@@ -341,10 +341,11 @@ window.onload = () => {
 
 /* ================= PROGRESS STORAGE ================= */
 
-function saveProgress(id, time, duration) {
+function saveProgress(id, time, duration, title) {
   localStorage.setItem("vid_" + id, JSON.stringify({
     time,
     duration,
+    title,
     ts: Date.now()
   }));
 }
@@ -369,7 +370,6 @@ function getProgress(id) {
 let player;
 let currentVideo = null;
 let progressInterval = null;
-let playerReady = false; 
 
 function getVideoId(url) {
   if (!url) return null;
@@ -396,11 +396,9 @@ function isShort(url) {
 
   /* isNewVideo */
 function isNewVideo(item) {
-  const published = new Date(item.pubDate).getTime();
-  const now = Date.now();
-
-  const hours = (now - published) / (1000 * 60 * 60);
-
+  const published = Date.parse(item.pubDate);
+  if (!published) return false; // fallback
+  const hours = (Date.now() - published) / (1000 * 60 * 60);
   return hours <= 48;
 }
 
@@ -499,9 +497,6 @@ function openPlayer(id) {
           if (startTime > 1) {
             player.seekTo(startTime, true);
           }
-      
-          playerReady = true;
-          startProgress();
           saveCurrent();
         };
       
@@ -532,8 +527,7 @@ function openPlayer(id) {
         if (time > 1) {
           player.seekTo(time, true);
         }
-    
-        playerReady = true;
+
         startProgress();
       };
     
@@ -546,7 +540,6 @@ function openPlayer(id) {
 function onPlayerStateChange(e) {
 
   if (e.data === YT.PlayerState.PLAYING) {
-    playerReady = true;
     startProgress();
     saveCurrent();
   }
@@ -574,8 +567,9 @@ function startProgress() {
     const duration = player.getDuration();
   
     if (!duration) return;
-  
-    saveProgress(currentVideo, current, duration);
+   
+    const title = document.querySelector(`.video[data-id="${currentVideo}"] span`)?.innerText || "";
+    saveProgress(currentVideo, current, duration, title);
   
     const percent = (current / duration) * 100;
   
@@ -652,7 +646,7 @@ function renderContinueWatching() {
 
     div.innerHTML = `
       <img src="https://img.youtube.com/vi/${entry.id}/mqdefault.jpg">
-      <span>Weiter schauen</span>
+      <span>${entry.title || "Weiter schauen"}</span>
       <div class="mini-progress" style="width:${percent}%"></div>
     `;
 
@@ -670,15 +664,14 @@ function saveCurrent() {
   const duration = player.getDuration?.() || 0;
 
   if (!duration || current < 1) return;
-
-  saveProgress(currentVideo, current, duration);
+  
+  const title = document.querySelector(`.video[data-id="${currentVideo}"] span`)?.innerText || "";
+  saveProgress(currentVideo, current, duration, title);
 }
 
 /* CLOSE */
 function closePlayer() {
-  saveCurrent();
-  playerReady = false;
-  
+  saveCurrent();  
   document.getElementById("overlay").style.display = "none";
   document.getElementById("playerView").style.display = "none";
 
