@@ -614,23 +614,26 @@ function getAllProgressEntries() {
 
     try {
       const data = JSON.parse(localStorage.getItem(key));
-      if (!data) continue;
+      if (!data || !data.time || !data.duration) continue;
 
       const id = key.replace("vid_", "");
 
       const percent = data.time / data.duration;
-      
-      // 🔥 bessere Filterung
-      if (percent < 0.1) continue;     // weniger als 10%
-      if (percent >= 0.98) continue;   // fast fertig
-      if (data.time < 10) continue;    // weniger als 10 Sekunden geschaut
+
+      // 🔥 harte Validierung
+      if (!isFinite(percent)) continue;
+      if (percent < 0.1) continue;
+      if (percent >= 0.98) continue;
+      if (data.time < 10) continue;
 
       items.push({
         id,
         ...data
       });
 
-    } catch (e) {}
+    } catch (e) {
+      console.warn("Bad entry:", key);
+    }
   }
 
   return items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
