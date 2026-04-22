@@ -457,7 +457,7 @@ function createVideo(item) {
 }
 
 /* LOAD */
-async function loadColumn(channelId, containerId) {
+async function (channelId, containerId) {
 
   const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
 
@@ -479,7 +479,6 @@ function loadAll() {
   loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos");
   loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos");
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
-  (); 
 }
 
   /* onYouTubeIframeAPIReady */
