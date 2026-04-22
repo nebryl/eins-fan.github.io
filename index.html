@@ -342,8 +342,8 @@ function startApp() {
   document.getElementById("loginView").style.display = "none";
   document.getElementById("appView").style.display = "block";
 
-  document.getElementById("welcome").innerText =
-    "Willkommen bei Einsflix " + localStorage.getItem("user");
+  document.getElementById("user").innerText =
+    " Willkommen bei " + localStorage.getItem("user");
 
   loadAll();
 }
