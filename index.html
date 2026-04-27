@@ -498,6 +498,58 @@ body {
   opacity: 0.8;
 }
 
+.cola {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  background-image: url("./cola.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+
+  pointer-events: auto;
+  cursor: pointer;
+
+  z-index: 99999;
+
+  animation: colaFall 8s linear forwards;
+}
+
+#playerView {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+#playerArea {
+  width: 800px;
+  height: 450px;
+  background: black;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+#colaZone {
+  position: relative;
+  width: 200px;
+  height: 450px;
+  overflow: hidden;
+}
+
+@keyframes colaFall {
+  0% {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
 </style>
 </head>
 
@@ -553,6 +605,7 @@ body {
     </h2>
 
     <div class="right-side">
+      <span id="colaCounter">🥤 0</span>
       <span id="welcome">Willkommen <span id="user"></span></span>
       <div class="logout" onclick="logout()">Logout</div>
     </div>
@@ -582,7 +635,10 @@ body {
 <div id="overlay" class="overlay"></div>
 
 <div class="preview" id="playerView">
-  <div id="player"></div>
+  <div id="playerArea">
+    <div id="player"></div>
+  </div>
+  <div id="colaZone"></div>
 </div>
 
 <div class="video-meta" id="video-meta" style="display:none;">
@@ -597,6 +653,8 @@ body {
 /* ================= LOGIN ================= */
 
 const PASSWORD = "EinsAufDieEins";
+
+let colaCount = Number(localStorage.getItem("colaCount") || 0);
 
 const CHANNELS_EinsOnly = [
   {
@@ -719,6 +777,12 @@ function selectProfile(user) {
 /* ================= APP ================= */
 
 function startApp() {
+
+  updateColaUI();
+
+  document.getElementById("playerView").style.display = "none";
+  document.getElementById("overlay").style.display = "none";
+  document.getElementById("video-meta").style.display = "none";
 
   document.getElementById("loginView").style.display = "none";
   document.getElementById("appView").style.display = "block";
@@ -1019,10 +1083,12 @@ function onPlayerStateChange(e) {
   if (e.data === YT.PlayerState.PLAYING) {
     startProgress();
     saveCurrent();
+    colaStart();
   }
   
   if (e.data === YT.PlayerState.PAUSED) {
     saveCurrent();
+    clearInterval(colaInterval);
   }
 
   if (e.data === YT.PlayerState.ENDED) {
@@ -1270,6 +1336,14 @@ function closePlayer() {
   clearInterval(progressInterval);
   progressInterval = null;
   renderContinueWatching();
+  clearInterval(colaInterval);
+
+  if (player) {
+  try {
+    player.stopVideo();
+    player.clearVideo();
+  } catch(e) {}
+}
 }
 
 let hoverPlayer = null;
@@ -1323,6 +1397,64 @@ function attachHoverPopup(card, videoId) {
       hoverPlayer = null;
     }
   });
+}
+
+function updateColaUI() {
+  document.getElementById("colaCounter").innerText = "🥤 " + colaCount;
+  localStorage.setItem("colaCount", colaCount);
+}
+
+updateColaUI();
+
+function addCola() {
+  colaCount++;
+  updateColaUI();
+}
+
+let colaInterval;
+
+function spawnCola() {
+
+  const rect = document.getElementById("playerView").getBoundingClientRect();
+
+  const side = Math.random() < 0.5 ? "left" : "right";
+
+  let x;
+
+  if (side === "left") {
+    x = rect.left - 60;
+  } else {
+    x = rect.right + 20;
+  }
+
+  const y = rect.top + Math.random() * rect.height;
+
+  const cola = document.createElement("div");
+  cola.className = "cola";
+
+  cola.style.position = "fixed";
+  cola.style.left = x + "px";
+  cola.style.top = y + "px";
+
+  cola.style.animationDuration = (8 + Math.random() * 4) + "s";
+
+  cola.onclick = () => {
+    addCola();
+    cola.remove();
+  };
+
+  document.body.appendChild(cola);
+
+  setTimeout(() => cola.remove(), 12000);
+}
+
+function colaStart() {
+
+  clearInterval(colaInterval);
+
+  colaInterval = setInterval(() => {
+    spawnCola();
+  }, 10000 + Math.random() * 10000);
 }
 
 /* EVENTS */
