@@ -980,7 +980,7 @@ function createRows() {
 /* ================= PROGRESS STORAGE ================= */
 
 function saveProgress(id, time, duration, title, isShort = false) {
-  localStorage.setItem("vid_" + id, JSON.stringify({
+  localStorage.setItem(getProfileKey(id), JSON.stringify({
     time,
     duration,
     title,
@@ -990,14 +990,13 @@ function saveProgress(id, time, duration, title, isShort = false) {
 }
 
 function getProgress(id) {
-  const data = localStorage.getItem("vid_" + id);
+  const data = localStorage.getItem(getProfileKey(id));
   if (!data) return null;
 
   const parsed = JSON.parse(data);
 
-  // 30 Tage Cleanup
   if (Date.now() - (parsed.ts || 0) > 30 * 24 * 60 * 60 * 1000) {
-    localStorage.removeItem("vid_" + id);
+    localStorage.removeItem(getProfileKey(id));
     return null;
   }
 
@@ -1312,21 +1311,22 @@ function startProgress() {
   /* PROGRESS Entries */
 function getAllProgressEntries() {
   const items = [];
+  const profile = localStorage.getItem("user") || "default";
+  const prefix = `vid_${profile}_`;
 
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
 
-    if (!key.startsWith("vid_")) continue;
+    if (!key.startsWith(prefix)) continue;
 
     try {
       const data = JSON.parse(localStorage.getItem(key));
       if (!data || !data.time || !data.duration) continue;
 
-      const id = key.replace("vid_", "");
+      const id = key.replace(prefix, "");
 
       const percent = data.time / data.duration;
 
-      // 🔥 harte Validierung
       if (!isFinite(percent)) continue;
       if (percent < 0.1) continue;
       if (percent >= 0.98) continue;
@@ -1587,6 +1587,11 @@ function attachHoverPopup(card, videoId) {
       hoverPlayer = null;
     }
   });
+}
+
+function getProfileKey(id) {
+  const profile = localStorage.getItem("user") || "default";
+  return `vid_${profile}_${id}`;
 }
 
 function updateColaUI() {
